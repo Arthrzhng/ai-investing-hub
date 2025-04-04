@@ -240,7 +240,7 @@ def build_lstm_forecast(df: pd.DataFrame, forecast_horizon: int = 60, seq_length
         Dense(1)
     ])
     model.compile(optimizer="adam", loss="mse")
-    model.fit(X, y, epochs=10, batch_size=32, verbose=0)
+    model.fit(X, y, epochs=5, batch_size=32, verbose=0)
 
     last_seq = scaled_data[-seq_length:].reshape((1, seq_length, 1))
     predictions = []
@@ -572,4 +572,4 @@ def update_dashboard(n_clicks: int, n_intervals: int, symbol: str, date_range: s
         )
 
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=False
