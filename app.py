@@ -269,7 +269,7 @@ def make_trading_decision(df: pd.DataFrame, sentiment: float, predictions: np.nd
     # Technical Indicator Analysis
     rsi = df["RSI"].iloc[-1] if "RSI" in df else 50
     macd = df["MACD"].iloc[-1] if "MACD" in df else 0
-    price_vs_bb_high = last_close / df["BB_High"].iloc[-1] if " 1 else 1
+    price_vs_bb_high = last_close / df["BB_High"].iloc[-1] if "BB_High" in df.columns else 1
     price_vs_bb_low = last_close / df["BB_Low"].iloc[-1] if "BB_Low" in df else 1
 
     # Decision Logic
