@@ -24,9 +24,12 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-# -----------------------------------------------------------------------------
+import nltk
+
+# Set NLTK data path to the local nltk_data folder
+nltk.data.path.append(os.path.join(os.path.dirname(__file__), 'nltk_data'))
+
 # API Keys (Hardcoded as per your request)
-# -----------------------------------------------------------------------------
 NEWS_API_KEY = "6b6fb493cecb4445a972f84ebdf537cc"
 FINNHUB_API_KEY = "cva86lpr01qshflgmdb0cva86lpr01qshflgmdbg"
 
