@@ -575,4 +575,4 @@ def update_dashboard(n_clicks: int, n_intervals: int, symbol: str, date_range: s
         )
 
 if __name__ == "__main__":
-    app.run_server(debug=False
+    app.run_server(debug=False)
