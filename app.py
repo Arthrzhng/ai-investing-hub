@@ -361,7 +361,7 @@ def build_portfolio_summary(allocations: Dict[str, float], total_capital: float)
         predicted_price = predictions[-1]
         current_value = current_price * shares
         predicted_value = predicted_price * shares
-        rows.append(html.Tr([html.Td(ticker), html W.Td(f"{shares:.0f}"), html.Td(f"${current_price:.2f}"), html.Td(f"${predicted_price:.2f}"), html.Td(f"${current_value:.2f}"), html.Td(f"${predicted_value:.2f}"), html.Td(f"${predicted_value - current_value:.2f}")]))
+        rows.append(html.Tr([html.Td(ticker), html.Td(f"{shares:.0f}"), html.Td(f"${current_price:.2f}"), html.Td(f"${predicted_price:.2f}"), html.Td(f"${current_value:.2f}"), html.Td(f"${predicted_value:.2f}"), html.Td(f"${predicted_value - current_value:.2f}")] ))
         current_total += current_value
         predicted_total += predicted_value
     summary = html.Div([html.P(f"Current Value: ${current_total:.2f}"), html.P(f"Predicted Value: ${predicted_total:.2f}"), html.P(f"Profit/Loss: ${predicted_total - current_total:.2f}")])
