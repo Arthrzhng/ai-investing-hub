@@ -473,6 +473,33 @@ app.index_string = '''
                 transform: translateY(-5px); 
                 box-shadow: 0 5px 15px rgba(233, 69, 96, 0.5); 
             }
+            #control-panel-card { 
+                animation: slideUp 0.8s ease-out; 
+            }
+            @keyframes slideUp { 
+                from { transform: translateY(20px); opacity: 0; } 
+                to { transform: translateY(0); opacity: 1; } 
+            }
+            .info-box { 
+                background: #0f3460; 
+                padding: 10px; 
+                border-radius: 8px; 
+                border: 1px solid #533483; 
+            }
+            .output-section { 
+                animation: fadeInSection 0.5s ease-in; 
+            }
+            @keyframes fadeInSection { 
+                from { opacity: 0; transform: translateY(10px); } 
+                to { opacity: 1; transform: translateY(0); } 
+            }
+            .graph-container { 
+                transition: transform 0.3s, box-shadow 0.3s; 
+            }
+            .graph-container:hover { 
+                transform: scale(1.01); 
+                box-shadow: 0 0 15px rgba(233, 69, 96, 0.3); 
+            }
         </style>
     </head>
     <body>
@@ -488,11 +515,11 @@ app.index_string = '''
     </body>
 </html>
 '''
-app.layout = dbc.Container(fluid=True, children=[
-    dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4")))
+app.layout = dbc.Container(fluid=True, className="dbc-container", children=[
+    dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4"))),  # Added comma
     dbc.Row([
         dbc.Col([
-            dbc.Card([dbc.CardHeader("Mode"), dbc.CardBody(dcc.RadioItems(id="mode-selection", options=[{"label": f" {m}", "value": v} for m, v in [("Single Ticker", "single"), ("Portfolio", "portfolio"), ("Market Insights", "market")]], value="single", labelStyle={"display": "block"}))], className="mb-4"),
+            dbc.Card([dbc.CardHeader("Mode"), dbc.CardBody(dcc.RadioItems(id="mode-selection", options=[{"label": f" {m}", "value": v} for m, v in [("Single Ticker", "single"), ("Portfolio", "portfolio"), ("Market Insights", "market")]], value="single", labelStyle={"display": "block"}))], id="mode-selection-card", className="mb-4"),
             dbc.Card([dbc.CardHeader("Asset Type"), dbc.CardBody(dcc.Dropdown(id="asset-type", options=[{"label": t, "value": t} for t in ["Stock", "ETF", "Crypto"]], value="Stock", clearable=False))], className="mb-4")
         ], width=3),
         dbc.Col([
@@ -501,28 +528,28 @@ app.layout = dbc.Container(fluid=True, children=[
                 html.Div(id="portfolio-div", children=[html.Label("Portfolio (Ticker:Shares):"), dcc.Input(id="portfolio-allocation", type="text", placeholder="AAPL:50,MSFT:30", className="form-control mb-2"), html.Label("Capital ($):"), dcc.Input(id="initial-capital", type="number", value=100000, className="form-control mb-2")], style={"display": "none"}),
                 html.Div(id="market-div", children=[html.Label("Market:"), dcc.Dropdown(id="market-selection", options=[{"label": k, "value": k} for k in MARKET_TICKERS], value="US Tech", clearable=False, className="mb-2")], style={"display": "none"}),
                 dbc.Row([dbc.Col(dcc.Dropdown(id="date-range", options=[{"label": r, "value": r} for r in VALID_DATE_RANGES], value="10y", clearable=False)), dbc.Col(dcc.Dropdown(id="forecast-horizon", options=FORECAST_OPTIONS, value=60, clearable=False))], className="mb-3"),
-                dbc.Button("Analyze", id="update-button", color="primary", n_clicks=0, style={"width": "100%"}),
+                dbc.Button("Analyze", id="update-button", color="primary", n_clicks=0),
                 dcc.Loading(id="loading", type="cube", children=html.Div(id="loading-output"))
-            ])])
+            ])], id="control-panel-card")
         ], width=9)
     ], style={"padding": "20px"}),
     dbc.Row(dbc.Col([
-        html.Div(id="market-info", className="fw-bold mb-3", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.Div(id="macro-info", className="fw-bold mb-3", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.Div(dcc.Graph(id="price-chart"), className="graph-container mb-4"),
-        html.Div(dcc.Graph(id="technical-chart"), className="graph-container mb-4"),
-        html.Div(dcc.Graph(id="sentiment-heatmap"), className="graph-container mb-4"),
-        html.Div(dcc.Graph(id="sector-correlation"), className="graph-container mb-4"),
-        html.H3("Prediction"), html.Div(id="prediction-info", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("Decision"), html.Div(id="trading-decision", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("Risk"), html.Div(id="risk-info", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("Fundamentals"), html.Div(id="fundamentals-info", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("Insider Transactions"), html.Div(id="insider-info", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("Analyst Recommendations"), html.Div(id="analyst-info", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("Portfolio"), html.Div(id="portfolio-details", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"}),
-        html.H3("News"), html.Ul(id="news-list", style={"background": "#0f3460", "padding": "10px", "borderRadius": "8px", "border": "1px solid #533483"})
+        html.Div(id="market-info", className="fw-bold mb-3 info-box output-section"),
+        html.Div(id="macro-info", className="fw-bold mb-3 info-box output-section"),
+        html.Div(dcc.Graph(id="price-chart"), className="graph-container mb-4 output-section"),
+        html.Div(dcc.Graph(id="technical-chart"), className="graph-container mb-4 output-section"),
+        html.Div(dcc.Graph(id="sentiment-heatmap"), className="graph-container mb-4 output-section"),
+        html.Div(dcc.Graph(id="sector-correlation"), className="graph-container mb-4 output-section"),
+        html.H3("Prediction"), html.Div(id="prediction-info", className="info-box output-section"),
+        html.H3("Decision"), html.Div(id="trading-decision", className="info-box output-section"),
+        html.H3("Risk"), html.Div(id="risk-info", className="info-box output-section"),
+        html.H3("Fundamentals"), html.Div(id="fundamentals-info", className="info-box output-section"),
+        html.H3("Insider Transactions"), html.Div(id="insider-info", className="info-box output-section"),
+        html.H3("Analyst Recommendations"), html.Div(id="analyst-info", className="info-box output-section"),
+        html.H3("Portfolio"), html.Div(id="portfolio-details", className="info-box output-section"),
+        html.H3("News"), html.Ul(id="news-list", className="info-box output-section")
     ], style={"padding": "20px"})),
-    dcc.Interval(id="interval-component", interval=300000, n_intervals=0)
+    dcc.Interval(id="interval-component", interval=600000, n_intervals=0)  # Increased to 10 minutes
 ])
 
 @app.callback(
