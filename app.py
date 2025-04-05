@@ -413,6 +413,18 @@ app.index_string = '''
         <title>AI Investing Hub</title>
         {%favicon%}
         {%css%}
+
+        <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-TKFYRNRB4S"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-TKFYRNRB4S');
+</script>
+
+
         <style>
             body { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #e0e0e0; font-family: 'Arial', sans-serif; }
             .card { background: #0f3460; border: 1px solid #e94560; transition: transform 0.3s; }
