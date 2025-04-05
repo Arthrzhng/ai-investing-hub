@@ -516,11 +516,11 @@ app.index_string = '''
 </html>
 '''
 app.layout = dbc.Container(fluid=True, className="dbc-container", children=[
-    dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4"))),  # Added comma
+    dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4"))),
     dbc.Row([
         dbc.Col([
             dbc.Card([dbc.CardHeader("Mode"), dbc.CardBody(dcc.RadioItems(id="mode-selection", options=[{"label": f" {m}", "value": v} for m, v in [("Single Ticker", "single"), ("Portfolio", "portfolio"), ("Market Insights", "market")]], value="single", labelStyle={"display": "block"}))], id="mode-selection-card", className="mb-4"),
-            dbc.Card([dbc.CardHeader("Asset Type"), dbc.CardBody(dcc.Dropdown(id="asset-type", options=[{"label": t, "value": t} for t in ["Stock", "ETF", "Crypto"]], value="Stock", clearable=False))], className="mb-4")
+            dbc.Card([dbc.CardHeader("Asset Type"), dbc.CardBody(dcc.Dropdown(id="asset-type", options=[{"label": t, "value": t} for t in ["Stock", "ETF", "Crypto"]], value="Stock", clearable=False))], id="asset-type-card", className="mb-4")
         ], width=3),
         dbc.Col([
             dbc.Card([dbc.CardHeader("Control Panel"), dbc.CardBody([
@@ -549,7 +549,7 @@ app.layout = dbc.Container(fluid=True, className="dbc-container", children=[
         html.H3("Portfolio"), html.Div(id="portfolio-details", className="info-box output-section"),
         html.H3("News"), html.Ul(id="news-list", className="info-box output-section")
     ], style={"padding": "20px"})),
-    dcc.Interval(id="interval-component", interval=600000, n_intervals=0)  # Increased to 10 minutes
+    dcc.Interval(id="interval-component", interval=600000, n_intervals=0)
 ])
 
 @app.callback(
