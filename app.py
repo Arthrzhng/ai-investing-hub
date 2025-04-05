@@ -25,6 +25,11 @@ from fredapi import Fred  # New dependency for macroeconomic data
 import shap  # New dependency for model explainability
 
 import nltk
+nltk.data.path.append(os.path.join(os.path.dirname(__file__), 'nltk_data'))
+try:
+    nltk.data.find('vader_lexicon')
+except LookupError:
+    nltk.download('vader_lexicon', download_dir=os.path.join(os.path.dirname(__file__), 'nltk_data'))
 
 # Set NLTK data path
 nltk.data.path.append(os.path.join(os.path.dirname(__file__), 'nltk_data'))
@@ -377,9 +382,114 @@ def get_company_recommendations(market: str) -> Tuple[Optional[html.Table], str]
 # Dash Application
 app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 server = app.server
-
+# Custom HTML template with CSS
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <style>
+            body { 
+                background: linear-gradient(135deg, #1a1a2e, #16213e), 
+                            url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAPElEQVQYV2NkYGD4z8DAwMjIyMDIyMhYGBgYGBhYGBkYGBgYGBkZGRkYGBgYGBkZGRkYGBgYGBkZGRkZGQF2aAJ1u0z2lwAAAABJRU5ErkJggg==');
+                background-size: 200% 200%; 
+                color: #e0e0e0; 
+                font-family: 'Roboto', sans-serif; 
+                animation: backgroundShift 10s ease infinite; 
+            }
+            @keyframes backgroundShift { 
+                0% { background-position: 0% 50%; } 
+                50% { background-position: 100% 50%; } 
+                100% { background-position: 0% 50%; } 
+            }
+            h1 { 
+                background: linear-gradient(90deg, #e94560, #533483); 
+                padding: 20px; 
+                border-bottom: 2px solid #e94560; 
+            }
+            h3 { 
+                color: #e94560; 
+                text-shadow: 0 0 5px rgba(233, 69, 96, 0.7); 
+                animation: slideIn 0.8s ease-out; 
+            }
+            @keyframes slideIn { 
+                from { transform: translateX(-20px); opacity: 0; } 
+                to { transform: translateX(0); opacity: 1; } 
+            }
+            .btn-primary { 
+                background: #e94560; 
+                border: none; 
+                transition: all 0.3s; 
+                animation: glow 1.5s infinite alternate; 
+            }
+            .btn-primary:hover { 
+                background: #ff6b6b; 
+                box-shadow: 0 0 15px #e94560; 
+            }
+            @keyframes glow { 
+                from { box-shadow: 0 0 5px #e94560; } 
+                to { box-shadow: 0 0 20px #e94560; } 
+            }
+            .card { 
+                background: #0f3460; 
+                border: 1px solid #e94560; 
+                transition: transform 0.3s, box-shadow 0.3s; 
+                position: relative; 
+                overflow: hidden; 
+            }
+            .card::before { 
+                content: ''; 
+                position: absolute; 
+                top: -2px; 
+                left: -2px; 
+                right: -2px; 
+                bottom: -2px; 
+                border: 2px solid transparent; 
+                border-image: linear-gradient(45deg, #e94560, #533483) 1; 
+                animation: borderGlow 2s infinite alternate; 
+            }
+            @keyframes borderGlow { 
+                from { border-image: linear-gradient(45deg, #e94560, #533483) 1; } 
+                to { border-image: linear-gradient(45deg, #533483, #e94560) 1; } 
+            }
+            .card:hover { 
+                transform: scale(1.02); 
+                box-shadow: 0 0 20px rgba(233, 69, 96, 0.7); 
+            }
+            .dbc-container { 
+                animation: fadeIn 1s ease-in; 
+            }
+            @keyframes fadeIn { 
+                from { opacity: 0; } 
+                to { opacity: 1; } 
+            }
+            #mode-selection-card { 
+                transition: transform 0.3s, box-shadow 0.3s; 
+            }
+            #mode-selection-card:hover { 
+                transform: translateY(-5px); 
+                box-shadow: 0 5px 15px rgba(233, 69, 96, 0.5); 
+            }
+        </style>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+            <div style="text-align: center; padding: 20px; color: #e0e0e0;">
+                Data provided by Finnhub, News API, and FRED. Powered by AI Investing Hub.
+            </div>
+        </footer>
+    </body>
+</html>
+'''
 app.layout = dbc.Container(fluid=True, children=[
-    dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4"), style={"background": "rgba(10, 20, 40, 0.8)", "padding": "20px", "borderBottom": "2px solid #e94560"})),
+    dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4")))
     dbc.Row([
         dbc.Col([
             dbc.Card([dbc.CardHeader("Mode"), dbc.CardBody(dcc.RadioItems(id="mode-selection", options=[{"label": f" {m}", "value": v} for m, v in [("Single Ticker", "single"), ("Portfolio", "portfolio"), ("Market Insights", "market")]], value="single", labelStyle={"display": "block"}))], className="mb-4"),
