@@ -35,8 +35,8 @@ except LookupError:
 nltk.data.path.append(os.path.join(os.path.dirname(__file__), 'nltk_data'))
 
 # API Keys (Hardcoded as per your request)
-NEWS_API_KEY = "6b6fb493cecb4445a972f84ebdf537cc"
-FINNHUB_API_KEY = "cva86lpr01qshflgmdb0cva86lpr01qshflgmdbg"
+NEWS_API_KEY = "0b8df22c860045cb9c7af8a803c2b6a3"
+FINNHUB_API_KEY = "cvpeplpr01qve7ioh950cvpeplpr01qve7ioh95g"
 FRED_API_KEY = "ae328ab01e1437d1e24bbd04f0e03e53"  # Replace with your FRED API key
 
 # Logging Configuration
