@@ -118,15 +118,40 @@ def fetch_market_data(symbol: str, period: str = "10y", interval: str = "1d") ->
             logger.warning(f"{source} failed for {symbol}: {e}")
     return pd.DataFrame()
 
+
 # New: Macroeconomic Data from FRED
 def fetch_macro_data() -> Dict[str, float]:
     fred = Fred(api_key=FRED_API_KEY)
     data = {}
     try:
-        data['GDP'] = fred.get_series('GDP').tail(1).values[0]
-        data['Unemployment'] = fred.get_series('UNRATE').tail(1).values[0]
-        data['Inflation'] = fred.get_series('CPIAUCSL').tail(1).values[0]
-        data['Interest Rate'] = fred.get_series('FEDFUNDS').tail(1).values[0]
+        # GDP (Nominal, in billions USD)
+        gdp_series = fred.get_series('GDP')
+        data['GDP'] = gdp_series.tail(1).values[0]
+        data['GDP_trend'] = "up" if gdp_series.iloc[-1] > gdp_series.iloc[-2] else "down"
+        data['GDP_avg'] = gdp_series.tail(20).mean()  # 5-year average (quarterly data)
+
+        # Unemployment Rate (%)
+        unrate_series = fred.get_series('UNRATE')
+        data['Unemployment'] = unrate_series.tail(1).values[0]
+        data['Unemployment_trend'] = "down" if unrate_series.iloc[-1] < unrate_series.iloc[-2] else "up"
+        data['Unemployment_avg'] = unrate_series.tail(60).mean()  # 5-year average (monthly data)
+
+        # Inflation Rate (Year-over-Year % Change in CPI)
+        cpi_series = fred.get_series('CPIAUCSL')
+        cpi_latest = cpi_series.iloc[-1]
+        cpi_year_ago = cpi_series.iloc[-13]  # CPI 12 months ago (monthly data)
+        inflation_rate = ((cpi_latest - cpi_year_ago) / cpi_year_ago) * 100
+        data['Inflation'] = round(inflation_rate, 2)
+        # Trend: Compare current inflation rate to previous month's rate
+        prev_inflation = ((cpi_series.iloc[-2] - cpi_series.iloc[-14]) / cpi_series.iloc[-14]) * 100
+        data['Inflation_trend'] = "up" if inflation_rate > prev_inflation else "down"
+        data['Inflation_avg'] = (((cpi_series.tail(60) - cpi_series.tail(60).shift(12)) / cpi_series.tail(60).shift(12)) * 100).mean()  # 5-year average inflation
+
+        # Interest Rate (Federal Funds Rate, %)
+        fedfunds_series = fred.get_series('FEDFUNDS')
+        data['Interest Rate'] = fedfunds_series.tail(1).values[0]
+        data['Interest Rate_trend'] = "up" if fedfunds_series.iloc[-1] > fedfunds_series.iloc[-2] else "down"
+        data['Interest Rate_avg'] = fedfunds_series.tail(60).mean()  # 5-year average (monthly data)
     except Exception as e:
         logger.error(f"FRED data fetch failed: {e}")
     return data
@@ -163,6 +188,23 @@ def fetch_analyst_recommendations(symbol: str) -> List[Dict[str, Any]]:
         logger.error(f"Analyst recommendations fetch failed for {symbol}: {e}")
         return []
 
+def parse_portfolio_allocation(allocation: str) -> Dict[str, float]:
+    if not allocation:
+        raise ValueError("Portfolio allocation cannot be empty")
+    try:
+        allocations = {}
+        pairs = allocation.split(",")
+        for pair in pairs:
+            ticker, shares = pair.split(":")
+            ticker = ticker.strip().upper()
+            shares = float(shares.strip())
+            if shares <= 0:
+                raise ValueError(f"Shares for {ticker} must be positive")
+            allocations[ticker] = shares
+        return allocations
+    except Exception as e:
+        raise ValueError(f"Invalid portfolio allocation format. Use 'TICKER:SHARES,TICKER:SHARES'. Error: {str(e)}")
+        
 # Technical Indicators
 def calculate_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty or not {"Close", "High", "Low"}.issubset(df.columns):
@@ -424,6 +466,9 @@ app.index_string = '''
                 border: none; 
                 transition: all 0.3s; 
                 animation: glow 1.5s infinite alternate; 
+                position: relative; 
+                z-index: 10;  /* Ensure button is above all elements */
+                pointer-events: auto !important;  /* Force interactivity */
             }
             .btn-primary:hover { 
                 background: #ff6b6b; 
@@ -439,6 +484,7 @@ app.index_string = '''
                 transition: transform 0.3s, box-shadow 0.3s; 
                 position: relative; 
                 overflow: hidden; 
+                pointer-events: auto;  /* Ensure card allows pointer events */
             }
             .card::before { 
                 content: ''; 
@@ -450,6 +496,7 @@ app.index_string = '''
                 border: 2px solid transparent; 
                 border-image: linear-gradient(45deg, #e94560, #533483) 1; 
                 animation: borderGlow 2s infinite alternate; 
+                z-index: -1;  /* Place pseudo-element behind content */
             }
             @keyframes borderGlow { 
                 from { border-image: linear-gradient(45deg, #e94560, #533483) 1; } 
@@ -458,6 +505,14 @@ app.index_string = '''
             .card:hover { 
                 transform: scale(1.02); 
                 box-shadow: 0 0 20px rgba(233, 69, 96, 0.7); 
+            }
+            .card-body { 
+                position: relative; 
+                z-index: 1;  /* Ensure card body is above pseudo-elements */
+                pointer-events: auto; 
+            }
+            .card-body * { 
+                pointer-events: auto;  /* Ensure all children are interactive */
             }
             .dbc-container { 
                 animation: fadeIn 1s ease-in; 
@@ -500,6 +555,14 @@ app.index_string = '''
                 transform: scale(1.01); 
                 box-shadow: 0 0 15px rgba(233, 69, 96, 0.3); 
             }
+            .dcc-dropdown, .form-control { 
+                position: relative; 
+                z-index: 10;  /* Ensure dropdowns and inputs are above other elements */
+                pointer-events: auto !important;  /* Force interactivity */
+            }
+            .dcc-row, .dcc-col { 
+                pointer-events: auto;  /* Ensure rows and columns allow pointer events */
+            }
         </style>
     </head>
     <body>
@@ -519,18 +582,81 @@ app.layout = dbc.Container(fluid=True, className="dbc-container", children=[
     dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4"))),
     dbc.Row([
         dbc.Col([
-            dbc.Card([dbc.CardHeader("Mode"), dbc.CardBody(dcc.RadioItems(id="mode-selection", options=[{"label": f" {m}", "value": v} for m, v in [("Single Ticker", "single"), ("Portfolio", "portfolio"), ("Market Insights", "market")]], value="single", labelStyle={"display": "block"}))], id="mode-selection-card", className="mb-4"),
-            dbc.Card([dbc.CardHeader("Asset Type"), dbc.CardBody(dcc.Dropdown(id="asset-type", options=[{"label": t, "value": t} for t in ["Stock", "ETF", "Crypto"]], value="Stock", clearable=False))], id="asset-type-card", className="mb-4")
+            dbc.Card([
+                dbc.CardHeader("Mode"),
+                dbc.CardBody(
+                    dcc.RadioItems(
+                        id="mode-selection",
+                        options=[{"label": f" {m}", "value": v} for m, v in [("Single Ticker", "single"), ("Portfolio", "portfolio"), ("Market Insights", "market")]],
+                        value="single",
+                        labelStyle={"display": "block"}
+                    )
+                )
+            ], id="mode-selection-card", className="mb-4"),
+            dbc.Card([
+                dbc.CardHeader("Asset Type"),
+                dbc.CardBody(
+                    dcc.Dropdown(
+                        id="asset-type",
+                        options=[{"label": t, "value": t} for t in ["Stock", "ETF", "Crypto"]],
+                        value="Stock",
+                        clearable=False,
+                        className="mb-3"  # Add margin
+                    )
+                )
+            ], id="asset-type-card", className="mb-4")
         ], width=3),
         dbc.Col([
-            dbc.Card([dbc.CardHeader("Control Panel"), dbc.CardBody([
-                html.Div(id="ticker-div", children=[html.Label("Ticker(s):"), dcc.Input(id="stock-symbol", type="text", value="AAPL", className="form-control mb-2")]),
-                html.Div(id="portfolio-div", children=[html.Label("Portfolio (Ticker:Shares):"), dcc.Input(id="portfolio-allocation", type="text", placeholder="AAPL:50,MSFT:30", className="form-control mb-2"), html.Label("Capital ($):"), dcc.Input(id="initial-capital", type="number", value=100000, className="form-control mb-2")], style={"display": "none"}),
-                html.Div(id="market-div", children=[html.Label("Market:"), dcc.Dropdown(id="market-selection", options=[{"label": k, "value": k} for k in MARKET_TICKERS], value="US Tech", clearable=False, className="mb-2")], style={"display": "none"}),
-                dbc.Row([dbc.Col(dcc.Dropdown(id="date-range", options=[{"label": r, "value": r} for r in VALID_DATE_RANGES], value="10y", clearable=False)), dbc.Col(dcc.Dropdown(id="forecast-horizon", options=FORECAST_OPTIONS, value=60, clearable=False))], className="mb-3"),
-                dbc.Button("Analyze", id="update-button", color="primary", n_clicks=0),
-                dcc.Loading(id="loading", type="cube", children=html.Div(id="loading-output"))
-            ])], id="control-panel-card")
+            dbc.Card([
+                dbc.CardHeader("Control Panel"),
+                dbc.CardBody([
+                    html.Div(id="ticker-div", children=[
+                        html.Label("Ticker(s):", className="mb-1"),
+                        dcc.Input(id="stock-symbol", type="text", value="AAPL", className="form-control mb-3")  # Add margin
+                    ], className="mb-3"),
+                    html.Div(id="portfolio-div", children=[
+                        html.Label("Portfolio (Ticker:Shares):", className="mb-1"),
+                        dcc.Input(id="portfolio-allocation", type="text", placeholder="AAPL:50,MSFT:30", className="form-control mb-3"),  # Add margin
+                        html.Label("Capital ($):", className="mb-1"),
+                        dcc.Input(id="initial-capital", type="number", value=100000, className="form-control mb-3")  # Add margin
+                    ], style={"display": "none"}, className="mb-3"),
+                    html.Div(id="market-div", children=[
+                        html.Label("Market:", className="mb-1"),
+                        dcc.Dropdown(id="market-selection", options=[{"label": k, "value": k} for k in MARKET_TICKERS], value="US Tech", clearable=False, className="mb-3")  # Add margin
+                    ], style={"display": "none"}, className="mb-3"),
+                    dbc.Row([
+                        dbc.Col(
+                            dcc.Dropdown(
+                                id="date-range",
+                                options=[{"label": r, "value": r} for r in VALID_DATE_RANGES],
+                                value="10y",
+                                clearable=False,
+                                className="mb-3"  # Add margin
+                            ),
+                            width=6
+                        ),
+                        dbc.Col(
+                            dcc.Dropdown(
+                                id="forecast-horizon",
+                                options=FORECAST_OPTIONS,
+                                value=60,
+                                clearable=False,
+                                className="mb-3"  # Add margin
+                            ),
+                            width=6
+                        )
+                    ], className="mb-3"),
+                    dbc.Button(
+                        "Analyze",
+                        id="update-button",
+                        color="primary",
+                        n_clicks=0,
+                        style={"width": "100%", "zIndex": 10},  # Ensure button is above other elements
+                        className="mb-3"  # Add margin
+                    ),
+                    dcc.Loading(id="loading", type="cube", children=html.Div(id="loading-output"))
+                ], style={"padding": "15px"})
+            ], id="control-panel-card")
         ], width=9)
     ], style={"padding": "20px"}),
     dbc.Row(dbc.Col([
@@ -573,14 +699,52 @@ def update_dashboard(n_clicks: int, n_intervals: int, symbol: str, date_range: s
     if triggered == "interval-component" and n_clicks == 0:
         raise dash.exceptions.PreventUpdate
 
-    macro_data = get_macro_data()
-    macro_text = html.Div([
-        html.H4("Macroeconomic Indicators"),
-        html.P(f"GDP: {macro_data.get('GDP', 0):.2f}"),
-        html.P(f"Unemployment: {macro_data.get('Unemployment', 0):.2f}%"),
-        html.P(f"Inflation: {macro_data.get('Inflation', 0):.2f}"),
-        html.P(f"Interest Rate: {macro_data.get('Interest Rate', 0):.2f}%")
-    ])
+    # Macroeconomic Indicators with Interpretations, Trends, and Averages
+macro_data = get_macro_data()
+gdp_interp = "A growing GDP indicates a healthy economy, supporting market growth."
+unemployment_interp = "A low unemployment rate suggests strong consumer spending, positive for markets."
+inflation_interp = "Moderate inflation (2-3%) is healthy; high inflation may pressure valuations."
+interest_interp = "Higher rates can increase borrowing costs, impacting growth stocks."
+
+macro_text = html.Div([
+    html.H4("Macroeconomic Indicators (US)"),
+    html.P([
+        html.Strong("GDP: "),
+        f"${macro_data.get('GDP', 0):.2f} Trillion ",
+        html.Span("↑" if macro_data.get('GDP_trend') == "up" else "↓", style={"color": "green" if macro_data.get('GDP_trend') == "up" else "red"}),
+        html.Br(),
+        f"5-Year Avg: ${macro_data.get('GDP_avg', 0):.2f} Trillion",
+        html.Br(),
+        gdp_interp
+    ]),
+    html.P([
+        html.Strong("Unemployment Rate: "),
+        f"{macro_data.get('Unemployment', 0):.2f}% ",
+        html.Span("↓" if macro_data.get('Unemployment_trend') == "down" else "↑", style={"color": "green" if macro_data.get('Unemployment_trend') == "down" else "red"}),
+        html.Br(),
+        f"5-Year Avg: {macro_data.get('Unemployment_avg', 0):.2f}%",
+        html.Br(),
+        unemployment_interp
+    ]),
+    html.P([
+        html.Strong("Inflation Rate (YoY): "),
+        f"{macro_data.get('Inflation', 0):.2f}% ",
+        html.Span("↑" if macro_data.get('Inflation_trend') == "up" else "↓", style={"color": "red" if macro_data.get('Inflation_trend') == "up" else "green"}),
+        html.Br(),
+        f"5-Year Avg: {macro_data.get('Inflation_avg', 0):.2f}%",
+        html.Br(),
+        inflation_interp
+    ]),
+    html.P([
+        html.Strong("Federal Funds Rate: "),
+        f"{macro_data.get('Interest Rate', 0):.2f}% ",
+        html.Span("↑" if macro_data.get('Interest Rate_trend') == "up" else "↓", style={"color": "red" if macro_data.get('Interest Rate_trend') == "up" else "green"}),
+        html.Br(),
+        f"5-Year Avg: {macro_data.get('Interest Rate_avg', 0):.2f}%",
+        html.Br(),
+        interest_interp
+    ]),
+])
 
     if mode == "market":
         tickers = MARKET_TICKERS.get(market_selection, [])
