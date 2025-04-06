@@ -433,6 +433,14 @@ app.index_string = '''
         <title>{%title%}</title>
         {%favicon%}
         {%css%}
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-F8QSPYV7JQ"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-F8QSPYV7JQ');
+        </script>
         <style>
             body { 
                 background: linear-gradient(135deg, #1a1a2e, #16213e), 
@@ -578,6 +586,7 @@ app.index_string = '''
     </body>
 </html>
 '''
+
 app.layout = dbc.Container(fluid=True, className="dbc-container", children=[
     dbc.Row(dbc.Col(html.H1("AI Investing Hub", className="text-center my-4"))),
     dbc.Row([
