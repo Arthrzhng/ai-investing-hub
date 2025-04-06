@@ -709,51 +709,51 @@ def update_dashboard(n_clicks: int, n_intervals: int, symbol: str, date_range: s
         raise dash.exceptions.PreventUpdate
 
     # Macroeconomic Indicators with Interpretations, Trends, and Averages
-macro_data = get_macro_data()
-gdp_interp = "A growing GDP indicates a healthy economy, supporting market growth."
-unemployment_interp = "A low unemployment rate suggests strong consumer spending, positive for markets."
-inflation_interp = "Moderate inflation (2-3%) is healthy; high inflation may pressure valuations."
-interest_interp = "Higher rates can increase borrowing costs, impacting growth stocks."
+    macro_data = get_macro_data()
+    gdp_interp = "A growing GDP indicates a healthy economy, supporting market growth."
+    unemployment_interp = "A low unemployment rate suggests strong consumer spending, positive for markets."
+    inflation_interp = "Moderate inflation (2-3%) is healthy; high inflation may pressure valuations."
+    interest_interp = "Higher rates can increase borrowing costs, impacting growth stocks."
 
-macro_text = html.Div([
-    html.H4("Macroeconomic Indicators (US)"),
-    html.P([
-        html.Strong("GDP: "),
-        f"${macro_data.get('GDP', 0):.2f} Trillion ",
-        html.Span("↑" if macro_data.get('GDP_trend') == "up" else "↓", style={"color": "green" if macro_data.get('GDP_trend') == "up" else "red"}),
-        html.Br(),
-        f"5-Year Avg: ${macro_data.get('GDP_avg', 0):.2f} Trillion",
-        html.Br(),
-        gdp_interp
-    ]),
-    html.P([
-        html.Strong("Unemployment Rate: "),
-        f"{macro_data.get('Unemployment', 0):.2f}% ",
-        html.Span("↓" if macro_data.get('Unemployment_trend') == "down" else "↑", style={"color": "green" if macro_data.get('Unemployment_trend') == "down" else "red"}),
-        html.Br(),
-        f"5-Year Avg: {macro_data.get('Unemployment_avg', 0):.2f}%",
-        html.Br(),
-        unemployment_interp
-    ]),
-    html.P([
-        html.Strong("Inflation Rate (YoY): "),
-        f"{macro_data.get('Inflation', 0):.2f}% ",
-        html.Span("↑" if macro_data.get('Inflation_trend') == "up" else "↓", style={"color": "red" if macro_data.get('Inflation_trend') == "up" else "green"}),
-        html.Br(),
-        f"5-Year Avg: {macro_data.get('Inflation_avg', 0):.2f}%",
-        html.Br(),
-        inflation_interp
-    ]),
-    html.P([
-        html.Strong("Federal Funds Rate: "),
-        f"{macro_data.get('Interest Rate', 0):.2f}% ",
-        html.Span("↑" if macro_data.get('Interest Rate_trend') == "up" else "↓", style={"color": "red" if macro_data.get('Interest Rate_trend') == "up" else "green"}),
-        html.Br(),
-        f"5-Year Avg: {macro_data.get('Interest Rate_avg', 0):.2f}%",
-        html.Br(),
-        interest_interp
-    ]),
-])
+    macro_text = html.Div([
+        html.H4("Macroeconomic Indicators (US)"),
+        html.P([
+            html.Strong("GDP: "),
+            f"${macro_data.get('GDP', 0):.2f} Trillion ",
+            html.Span("↑" if macro_data.get('GDP_trend') == "up" else "↓", style={"color": "green" if macro_data.get('GDP_trend') == "up" else "red"}),
+            html.Br(),
+            f"5-Year Avg: ${macro_data.get('GDP_avg', 0):.2f} Trillion",
+            html.Br(),
+            gdp_interp
+        ]),
+        html.P([
+            html.Strong("Unemployment Rate: "),
+            f"{macro_data.get('Unemployment', 0):.2f}% ",
+            html.Span("↓" if macro_data.get('Unemployment_trend') == "down" else "↑", style={"color": "green" if macro_data.get('Unemployment_trend') == "down" else "red"}),
+            html.Br(),
+            f"5-Year Avg: {macro_data.get('Unemployment_avg', 0):.2f}%",
+            html.Br(),
+            unemployment_interp
+        ]),
+        html.P([
+            html.Strong("Inflation Rate (YoY): "),
+            f"{macro_data.get('Inflation', 0):.2f}% ",
+            html.Span("↑" if macro_data.get('Inflation_trend') == "up" else "↓", style={"color": "red" if macro_data.get('Inflation_trend') == "up" else "green"}),
+            html.Br(),
+            f"5-Year Avg: {macro_data.get('Inflation_avg', 0):.2f}%",
+            html.Br(),
+            inflation_interp
+        ]),
+        html.P([
+            html.Strong("Federal Funds Rate: "),
+            f"{macro_data.get('Interest Rate', 0):.2f}% ",
+            html.Span("↑" if macro_data.get('Interest Rate_trend') == "up" else "↓", style={"color": "red" if macro_data.get('Interest Rate_trend') == "up" else "green"}),
+            html.Br(),
+            f"5-Year Avg: {macro_data.get('Interest Rate_avg', 0):.2f}%",
+            html.Br(),
+            interest_interp
+        ]),
+    ])
 
     if mode == "market":
         tickers = MARKET_TICKERS.get(market_selection, [])
