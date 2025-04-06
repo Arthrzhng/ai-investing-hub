@@ -82,6 +82,7 @@ MARKET_TICKERS = {
 
 # Data Fetching Functions
 def fetch_finnhub_data(symbol: str, period: str) -> pd.DataFrame:
+    logger.info(f"Using Finnhub API Key: {FINNHUB_API_KEY}")  # Temporary log to verify the API key
     now = datetime.now()
     start_date = now - timedelta(days={"1wk": 7, "1mo": 30, "6mo": 180, "1y": 365, "5y": 1825, "10y": 3650}.get(period, 3650))
     url = f"https://finnhub.io/api/v1/stock/candle?symbol={symbol}&resolution=D&from={int(start_date.timestamp())}&to={int(now.timestamp())}&token={FINNHUB_API_KEY}"
@@ -90,11 +91,18 @@ def fetch_finnhub_data(symbol: str, period: str) -> pd.DataFrame:
         response.raise_for_status()
         data = response.json()
         if data.get("s") != "ok":
+            logger.warning(f"Finnhub returned non-ok status for {symbol}: {data}")
             return pd.DataFrame()
         df = pd.DataFrame({"Date": pd.to_datetime(data["t"], unit="s"), "Open": data["o"], "High": data["h"], "Low": data["l"], "Close": data["c"], "Volume": data["v"]})
         return df.sort_values("Date")
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"Finnhub fetch failed for {symbol}: {e}, Status Code: {response.status_code}, Response: {response.text}")
+        return pd.DataFrame()
+    except requests.exceptions.RequestException as e:
         logger.error(f"Finnhub fetch failed for {symbol}: {e}")
+        return pd.DataFrame()
+    except ValueError as e:
+        logger.error(f"Finnhub JSON decode failed for {symbol}: {e}, Response: {response.text}")
         return pd.DataFrame()
 
 def fetch_market_data(symbol: str, period: str = "10y", interval: str = "1d") -> pd.DataFrame:
